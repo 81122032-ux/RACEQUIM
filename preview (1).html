@@ -1,0 +1,409 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QUÍMICA RACER 4 NIVELES</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#081326;color:white;font-family:Arial,sans-serif;text-align:center}
+header{background:#102442;padding:12px}
+h1{margin:5px;color:#50efff;font-size:clamp(23px,5vw,34px)}
+#hud{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;padding:10px}
+.pill{background:#213653;padding:9px 11px;border-radius:10px;font-weight:bold}
+#game{position:relative;width:min(95vw,460px);height:min(72vh,620px);min-height:470px;margin:auto;overflow:hidden;border:3px solid #6deaff;border-radius:14px;background:#254b35}
+#road{position:absolute;inset:0}
+#road:before,#road:after{content:"";position:absolute;top:-100%;height:300%;width:5px;background:repeating-linear-gradient(to bottom,#fff 0 35px,transparent 35px 70px);animation:roadmove .55s linear infinite}
+#road:before{left:26%}#road:after{left:74%}
+.lane-line{position:absolute;left:50%;height:100%;width:2px;background:repeating-linear-gradient(to bottom,#ffffff88 0 20px,transparent 20px 45px)}
+@keyframes roadmove{to{transform:translateY(70px)}}
+.level1 #road{background:linear-gradient(90deg,#318449 0 8%,#394654 8% 92%,#318449 92%)}
+.level2 #road{background:linear-gradient(90deg,#d6a049 0 8%,#625950 8% 92%,#d6a049 92%)}
+.level3 #road{background:linear-gradient(90deg,#192d58 0 8%,#242b43 8% 92%,#192d58 92%)}
+.level4 #road{background:linear-gradient(90deg,#472477 0 8%,#15172e 8% 92%,#472477 92%)}
+#question{position:absolute;z-index:8;top:9px;left:50%;transform:translateX(-50%);width:92%;padding:9px;background:#101d35f2;border:2px solid #ffe56a;border-radius:12px}
+#stage{color:#9af5ff;font-size:12px;font-weight:bold}
+#prompt{font-size:23px;font-weight:bold;color:#ffe56a;margin:5px 0}
+#subprompt{font-size:12px}
+#items{position:absolute;inset:0}
+.item{position:absolute;width:84px;min-height:68px;padding:4px 2px;transform:translateX(-50%);border:2px solid white;border-radius:12px;background:#162d4c;color:white;box-shadow:0 0 12px #4feaff;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;font-size:20px;font-weight:bold;z-index:3;overflow-wrap:anywhere}
+.item .label{font-size:12px;line-height:1.05}
+#car{position:absolute;z-index:5;bottom:23px;left:50%;width:48px;height:78px;transform:translateX(-50%);border:3px solid white;border-radius:12px 12px 8px 8px;background:linear-gradient(90deg,#a40000,#ff2929,#ffaaaa,#ce0000);box-shadow:0 0 15px #ff4444;transition:left .12s}
+#car:before{content:"";position:absolute;top:12px;left:8px;width:26px;height:21px;background:#8eeaff;border:2px solid white;border-radius:6px}
+#car:after{content:"";position:absolute;bottom:8px;left:7px;width:28px;height:8px;background:#ffec76;border-radius:3px}
+.wheel{position:absolute;width:7px;height:17px;background:#080b10}
+.w1{left:-7px;top:16px}.w2{right:-7px;top:16px}.w3{left:-7px;bottom:10px}.w4{right:-7px;bottom:10px}
+#car.reverse{animation:reverse .8s ease-in-out}
+@keyframes reverse{0%{transform:translateX(-50%) translateY(0)}40%{transform:translateX(-50%) translateY(55px) rotate(-8deg)}70%{transform:translateX(-50%) translateY(55px) rotate(8deg)}100%{transform:translateX(-50%) translateY(0)}}
+#message{position:absolute;z-index:10;top:51%;left:4%;width:92%;font-size:20px;font-weight:bold;text-shadow:0 2px 5px #000;pointer-events:none}
+#panel{padding:10px}
+button{padding:12px 16px;margin:4px;border:0;border-radius:10px;background:#13c4db;color:#061525;font-size:16px;font-weight:bold;cursor:pointer}
+#start{background:#ffe56a}
+#touch{display:flex;justify-content:center;gap:30px}
+#touch button{min-width:90px;font-size:24px}
+#help{max-width:460px;margin:12px auto;padding:0 12px;color:#d6e5f8;font-size:14px;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+<h1>🏎️ QUÍMICA RACER ⚛️</h1>
+<div>¡Conduce, aprende y conquista los elementos!</div>
+</header>
+
+<div id="hud">
+ <div class="pill">🏆 <span id="score">0</span> pts</div>
+ <div class="pill">🌟 Nivel <span id="level">1</span>/4</div>
+ <div class="pill">❤️ <span id="lives">3</span></div>
+ <div class="pill">❌ <span id="errors">0</span>/3</div>
+</div>
+
+<div id="game" class="level1">
+ <div id="road"><div class="lane-line"></div></div>
+ <div id="question">
+  <div id="stage">NIVEL 1: SÍMBOLOS</div>
+  <div id="prompt">Oxígeno</div>
+  <div id="subprompt">Recoge el símbolo correcto</div>
+ </div>
+ <div id="items"></div>
+ <div id="car"><i class="wheel w1"></i><i class="wheel w2"></i><i class="wheel w3"></i><i class="wheel w4"></i></div>
+ <div id="message">¡Prepárate para correr!</div>
+</div>
+
+<div id="panel">
+ <button id="start">▶ INICIAR CARRERA</button>
+ <button id="restart">↻ REINICIAR</button>
+ <div id="touch">
+  <button id="left">⬅️</button>
+  <button id="right">➡️</button>
+ </div>
+</div>
+
+<div id="help">
+ <b>Controles:</b> flechas del teclado o botones de pantalla.
+ Cada respuesta correcta suma 100 puntos. Cada tres respuestas
+ incorrectas pierdes una vida. El auto retrocede cuando te equivocas.
+ Al perder las tres vidas, la carrera vuelve al inicio.
+ <br><br>
+ <b>Nivel 1:</b> nombre → símbolo.
+ <b>Nivel 2:</b> símbolo → nombre.
+ <b>Nivel 3:</b> nombre → número atómico.
+ <b>Nivel 4:</b> nombre → peso atómico y símbolo → objeto cotidiano.
+</div>
+
+<script>
+const levels = [
+{
+ name:"NIVEL 1: SÍMBOLOS QUÍMICOS",
+ hint:"Encuentra el símbolo del elemento",
+ questions:[
+  {p:"Oxígeno",a:"O",o:["O","Au","Fe","Na"]},
+  {p:"Oro",a:"Au",o:["Ag","Au","Al","O"]},
+  {p:"Hierro",a:"Fe",o:["F","Fe","Cu","C"]},
+  {p:"Carbono",a:"C",o:["Ca","Cl","C","Co"]},
+  {p:"Sodio",a:"Na",o:["N","Ne","Na","Ni"]},
+  {p:"Plata",a:"Ag",o:["Au","Ag","Al","Ar"]}
+ ]
+},
+{
+ name:"NIVEL 2: NOMBRES",
+ hint:"Encuentra el nombre del elemento",
+ questions:[
+  {p:"Au",a:"Oro",o:["Oro","Oxígeno","Plata","Hierro"]},
+  {p:"Fe",a:"Hierro",o:["Flúor","Hierro","Helio","Fósforo"]},
+  {p:"Na",a:"Sodio",o:["Nitrógeno","Neón","Sodio","Níquel"]},
+  {p:"Cu",a:"Cobre",o:["Calcio","Carbono","Cobre","Cloro"]},
+  {p:"Ag",a:"Plata",o:["Plata","Plomo","Potasio","Paladio"]},
+  {p:"O",a:"Oxígeno",o:["Oro","Oxígeno","Osmio","Estaño"]}
+ ]
+},
+{
+ name:"NIVEL 3: NÚMERO ATÓMICO",
+ hint:"Elige el número atómico correcto",
+ questions:[
+  {p:"Oxígeno",a:"8",o:["6","8","10","16"]},
+  {p:"Carbono",a:"6",o:["12","8","6","14"]},
+  {p:"Oro",a:"79",o:["47","29","79","26"]},
+  {p:"Hierro",a:"26",o:["24","26","28","16"]},
+  {p:"Sodio",a:"11",o:["10","12","11","19"]},
+  {p:"Plata",a:"47",o:["29","47","79","17"]}
+ ]
+},
+{
+ name:"NIVEL 4: RETO QUÍMICO",
+ hint:"Supera las dos pruebas finales",
+ questions:[
+  {type:"weight",p:"Oxígeno",a:"16,00",o:["8,00","16,00","32,06","12,01"]},
+  {type:"weight",p:"Carbono",a:"12,01",o:["14,01","12,01","16,00","1,01"]},
+  {type:"weight",p:"Hierro",a:"55,85",o:["55,85","26,98","63,55","58,69"]},
+  {type:"weight",p:"Oro",a:"196,97",o:["107,87","118,71","196,97","200,59"]},
+  {type:"weight",p:"Sodio",a:"22,99",o:["39,10","22,99","24,31","40,08"]},
+  {type:"object",p:"Símbolo: Fe",a:"CLAVO",o:["CLAVO","LATA","SAL","LÁPIZ"],icons:["🔩","🥫","🧂","✏️"]},
+  {type:"object",p:"Símbolo: Cu",a:"CABLE",o:["LÁPIZ","CABLE","SAL","VASO"],icons:["✏️","🔌","🧂","🥛"]},
+  {type:"object",p:"Símbolo: Al",a:"LATA",o:["CLAVO","LATA","CABLE","SAL"],icons:["🔩","🥫","🔌","🧂"]},
+  {type:"object",p:"Símbolo: C",a:"LÁPIZ",o:["VASO","CLAVO","LÁPIZ","LATA"],icons:["🥛","🔩","✏️","🥫"]},
+  {type:"object",p:"Símbolo: Na",a:"SAL",o:["CABLE","LÁPIZ","SAL","LATA"],icons:["🔌","✏️","🧂","🥫"]}
+ ]
+}
+];
+
+const game=document.getElementById("game");
+const car=document.getElementById("car");
+const itemsBox=document.getElementById("items");
+const message=document.getElementById("message");
+const promptBox=document.getElementById("prompt");
+const subprompt=document.getElementById("subprompt");
+const stageBox=document.getElementById("stage");
+const lanes=[14,38,62,86];
+
+let score=0,level=0,question=0,lives=3,errors=0,lane=1;
+let running=false,reversing=false;
+let objects=[],lastTime=0,spawnTimer=0,animationId=null;
+let reverseTimer=null,restartTimer=null,questionSerial=0;
+
+function updateHUD(){
+ document.getElementById("score").textContent=score;
+ document.getElementById("level").textContent=Math.min(level+1,4);
+ document.getElementById("lives").textContent=lives;
+ document.getElementById("errors").textContent=errors;
+}
+
+function currentQuestion(){
+ return levels[level].questions[question];
+}
+
+function showQuestion(){
+ const q=currentQuestion();
+ stageBox.textContent=levels[level].name;
+ promptBox.textContent=q.p;
+
+ if(level===0) subprompt.textContent="Recoge el símbolo correcto";
+ if(level===1) subprompt.textContent="Recoge el nombre correspondiente";
+ if(level===2) subprompt.textContent="Recoge el número atómico";
+ if(level===3 && q.type==="weight") subprompt.textContent="Selecciona el peso atómico aproximado (u)";
+ if(level===3 && q.type==="object") subprompt.textContent="Recoge el objeto que contiene este elemento";
+}
+
+function say(t,c="#fff"){
+ message.textContent=t;
+ message.style.color=c;
+}
+
+function clearObjects(){
+ objects.forEach(o=>o.el.remove());
+ objects=[];
+ itemsBox.innerHTML="";
+}
+
+function moveCar(){
+ car.style.left=lanes[lane]+"%";
+}
+
+function setBackground(){
+ game.className="level"+(level+1);
+}
+
+function makeOptions(){
+ const q=currentQuestion();
+ const opts=[...q.o];
+ // Barajar las cuatro opciones
+ for(let i=opts.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [opts[i],opts[j]]=[opts[j],opts[i]];
+ }
+ const icons=q.icons||[];
+ opts.forEach((value,i)=>{
+  const el=document.createElement("div");
+  el.className="item";
+  if(q.type==="object"){
+   el.innerHTML='<span>'+icons[q.o.indexOf(value)]+'</span><span class="label">'+value+'</span>';
+  }else{
+   el.textContent=value;
+   if(value.length>7) el.style.fontSize="14px";
+  }
+  const itemLane=i;
+  el.style.left=lanes[itemLane]+"%";
+  el.style.top=(-85-i*115)+"px";
+  itemsBox.appendChild(el);
+  objects.push({el,lane:itemLane,y:-85-i*115,value,serial:questionSerial});
+ });
+}
+
+function reverseCar(){
+ if(reversing)return;
+ reversing=true;
+ car.classList.remove("reverse");
+ void car.offsetWidth;
+ car.classList.add("reverse");
+ clearTimeout(reverseTimer);
+ reverseTimer=setTimeout(()=>{
+  car.classList.remove("reverse");
+  reversing=false;
+ },800);
+}
+
+function startGame(){
+ cancelAnimationFrame(animationId);
+ clearTimeout(reverseTimer);
+ clearTimeout(restartTimer);
+
+ score=0;level=0;question=0;lives=3;errors=0;lane=1;
+ running=true;reversing=false;lastTime=0;spawnTimer=0;
+ questionSerial++;
+ clearObjects();
+ car.classList.remove("reverse");
+ setBackground();
+ showQuestion();
+ moveCar();
+ updateHUD();
+ say("¡Comienza la carrera!","#ffe56a");
+ document.getElementById("start").textContent="⏸ PAUSAR";
+ makeOptions();
+ animationId=requestAnimationFrame(loop);
+}
+
+function nextQuestion(){
+ question++;
+ questionSerial++;
+ clearObjects();
+
+ if(question>=levels[level].questions.length){
+  level++;
+  question=0;
+  if(level>=levels.length){
+   winGame();
+   return;
+  }
+  setBackground();
+  say("¡BIENVENIDO AL NIVEL "+(level+1)+"!","#ffe56a");
+ }
+ showQuestion();
+ updateHUD();
+ spawnTimer=0;
+ makeOptions();
+}
+
+function loseLife(){
+ lives--;
+ errors=0;
+ updateHUD();
+
+ if(lives<=0){
+  running=false;
+  cancelAnimationFrame(animationId);
+  clearTimeout(reverseTimer);
+  reversing=false;
+  car.classList.remove("reverse");
+  clearObjects();
+  say("💥 ¡SIN VIDAS! REINICIANDO...","#ff7777");
+  document.getElementById("start").textContent="REINICIANDO...";
+  restartTimer=setTimeout(startGame,1500);
+ }else{
+  say("❤️ ¡PERDISTE UNA VIDA!","#ffb4b4");
+ }
+}
+
+function winGame(){
+ running=false;
+ cancelAnimationFrame(animationId);
+ clearObjects();
+ say("🏆 ¡CAMPEÓN! PUNTOS: "+score,"#ffe56a");
+ document.getElementById("start").textContent="▶ JUGAR OTRA VEZ";
+}
+
+function loop(time){
+ if(!running)return;
+ if(!lastTime)lastTime=time;
+ const dt=Math.min((time-lastTime)/16.67,2);
+ lastTime=time;
+
+ // Las opciones avanzan por cuatro carriles
+ for(let i=objects.length-1;i>=0;i--){
+  const o=objects[i];
+  o.y+=2.5*dt;
+  o.el.style.top=o.y+"px";
+
+  const carY=game.clientHeight-110;
+  if(!reversing && o.serial===questionSerial &&
+     o.lane===lane && o.y+68>=carY && o.y<carY+78){
+   o.el.remove();
+   objects.splice(i,1);
+
+   if(o.value===currentQuestion().a){
+    score+=100;
+    updateHUD();
+    say("✅ ¡CORRECTO! +100 PUNTOS","#8bffb1");
+    nextQuestion();
+    if(!running)return;
+    break;
+   }else{
+    errors++;
+    updateHUD();
+    say("❌ INCORRECTO: "+errors+"/3","#ff7777");
+    reverseCar();
+
+    if(errors>=3){
+     loseLife();
+     if(!running)return;
+    }
+   }
+   continue;
+  }
+
+  if(o.y>game.clientHeight){
+   o.el.remove();
+   objects.splice(i,1);
+  }
+ }
+
+ // Si pasan las opciones sin recogerlas, se vuelven a presentar
+ if(objects.length===0 && running && !reversing){
+  spawnTimer+=dt;
+  if(spawnTimer>35){
+   spawnTimer=0;
+   makeOptions();
+  }
+ }
+
+ animationId=requestAnimationFrame(loop);
+}
+
+function changeLane(d){
+ if(!running||reversing)return;
+ lane=Math.max(0,Math.min(3,lane+d));
+ moveCar();
+}
+
+function toggleGame(){
+ if(running){
+  running=false;
+  cancelAnimationFrame(animationId);
+  document.getElementById("start").textContent="▶ CONTINUAR";
+ }else if(lives>0 && level<4){
+  clearTimeout(restartTimer);
+  running=true;
+  lastTime=0;
+  document.getElementById("start").textContent="⏸ PAUSAR";
+  animationId=requestAnimationFrame(loop);
+ }else{
+  startGame();
+ }
+}
+
+document.addEventListener("keydown",e=>{
+ if(["ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();
+ if(e.key==="ArrowLeft")changeLane(-1);
+ if(e.key==="ArrowRight")changeLane(1);
+ if(e.key===" ")toggleGame();
+});
+
+document.getElementById("left").onclick=()=>changeLane(-1);
+document.getElementById("right").onclick=()=>changeLane(1);
+document.getElementById("start").onclick=toggleGame;
+document.getElementById("restart").onclick=startGame;
+
+showQuestion();
+updateHUD();
+</script>
+</body>
+</html>
